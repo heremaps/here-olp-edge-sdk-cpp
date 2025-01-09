@@ -62,6 +62,11 @@ CatalogClient::GetLatestVersion(CatalogVersionRequest request) {
   return impl_->GetLatestVersion(std::move(request));
 }
 
+CatalogVersionResponse CatalogClient::GetLatestVersion(
+    CatalogVersionRequest request, client::CancellationContext context) {
+  return impl_->GetLatestVersion(std::move(request), std::move(context));
+}
+
 client::CancellationToken CatalogClient::ListVersions(
     VersionsRequest request, VersionsResponseCallback callback) {
   return impl_->ListVersions(std::move(request), std::move(callback));

@@ -137,6 +137,31 @@ class DATASERVICE_READ_API VersionsRequest final {
   }
 
   /**
+   * @brief Gets the fetch option that controls how requests are handled.
+   *
+   * The default option is `OnlineIfNotFound` that queries the network if
+   * the requested resource is not in the cache.
+   *
+   * @return The fetch option.
+   */
+  inline FetchOptions GetFetchOption() const { return fetch_option_; }
+
+  /**
+   * @brief Sets the fetch option that you can use to set the source from
+   * which data should be fetched.
+   *
+   * @see `GetFetchOption()` for information on usage and format.
+   *
+   * @param fetch_option The `FetchOption` enum.
+   *
+   * @return A reference to the updated `VersionsRequest` instance.
+   */
+  inline VersionsRequest& WithFetchOption(FetchOptions fetch_option) {
+    fetch_option_ = fetch_option;
+    return *this;
+  }
+
+  /**
    * @brief Creates a readable format for the request.
    *
    * @return A string representation of the request.
@@ -156,6 +181,7 @@ class DATASERVICE_READ_API VersionsRequest final {
   std::int64_t start_version_;
   std::int64_t end_version_;
   boost::optional<std::string> billing_tag_;
+  FetchOptions fetch_option_{OnlineIfNotFound};
 };
 
 }  // namespace read

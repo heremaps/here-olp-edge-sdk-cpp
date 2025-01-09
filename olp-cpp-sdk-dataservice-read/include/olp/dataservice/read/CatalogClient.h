@@ -160,6 +160,19 @@ class DATASERVICE_READ_API CatalogClient final {
       CatalogVersionRequest request);
 
   /**
+   * @brief Gets the catalog version synchronously.
+   *
+   * @param request The `CatalogVersionRequest` instance that contains
+   * a complete set of request parameters.
+   * @param context The `CancellationContext` instance.
+   *
+   * @return `CatalogVersionResponse` instance with the catalog configuration or
+   * an error
+   */
+  CatalogVersionResponse GetLatestVersion(CatalogVersionRequest request,
+                                          client::CancellationContext context);
+
+  /**
    * @brief Gets the catalog versions list.
    *
    * @note Request of catalog versions list works only online.

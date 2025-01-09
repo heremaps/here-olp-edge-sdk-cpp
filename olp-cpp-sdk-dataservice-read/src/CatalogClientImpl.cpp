@@ -121,6 +121,16 @@ CatalogClientImpl::GetLatestVersion(CatalogVersionRequest request) {
       std::move(cancel_token), std::move(promise));
 }
 
+CatalogVersionResponse CatalogClientImpl::GetLatestVersion(
+    CatalogVersionRequest request, client::CancellationContext context) {
+  auto catalog = catalog_;
+  auto settings = settings_;
+  auto lookup_client = lookup_client_;
+
+  repository::CatalogRepository repository(catalog, settings, lookup_client);
+  return repository.GetLatestVersion(request, std::move(context));
+}
+
 client::CancellationToken CatalogClientImpl::ListVersions(
     VersionsRequest request, VersionsResponseCallback callback) {
   auto catalog = catalog_;

@@ -64,6 +64,9 @@ class CatalogClientImpl final {
   client::CancellableFuture<CatalogVersionResponse> GetLatestVersion(
       CatalogVersionRequest request);
 
+  CatalogVersionResponse GetLatestVersion(CatalogVersionRequest request,
+                                          client::CancellationContext context);
+
   client::CancellationToken ListVersions(VersionsRequest request,
                                          VersionsResponseCallback callback);
 
