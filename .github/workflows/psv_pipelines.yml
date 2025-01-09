@@ -11,6 +11,7 @@ on:
 env:
   SEGFAULT_SIGNALS: all
 
+
 jobs:
   psv-linux-20-04-gcc7-build-cpplint:
     name: PSV.Linux.20.04.gcc7.Cpplint
