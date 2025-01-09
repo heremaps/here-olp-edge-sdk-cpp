@@ -19,6 +19,7 @@
 
 #include "DiskCache.h"
 
+#include <sys/statfs.h>
 #include <iterator>
 #include <memory>
 #include <string>
@@ -144,6 +145,52 @@ int CheckCompactionFinished(leveldb::DB& db) {
       files_at_level0);
 
   return false;
+}
+
+uint64_t GetAvailableSpaceBytes(const std::string& path) {
+#if defined(_WIN32) && !defined(__MINGW32__)
+#error Not implemented!
+#else
+
+  struct ::statfs64 fs_stat {};
+
+  if (::statfs64(path.c_str(), &fs_stat) != 0) {
+    return 0u;
+  }
+
+  // Check for inodes is missing now but the data is available through
+  // `statfs64::f_files` and `statfs46::f_ffree`.
+
+  const auto available_bytes = fs_stat.f_bavail * fs_stat.f_bsize;
+  // Here we could adjust available space by reducing it to some extent.
+  // For example, we could not allow it go lower than 5-10% from the initial
+  // capacity. This will kinda simulate having a dedicated file but removes all
+  // bookkeeping stuff.
+  return available_bytes;
+
+#endif
+}
+
+uint64_t GetWriteBatchSize(const leveldb::WriteBatch& batch) {
+  struct BatchSizeCalculator final : leveldb::WriteBatch::Handler {
+    void Put(const leveldb::Slice& key, const leveldb::Slice& value) final {
+      size += key.size() + value.size();
+    }
+
+    void Delete(const leveldb::Slice&) final {
+      // FIXME: ignore?
+    }
+
+    // It is possible to have some initial size here for any batch, e.g. size of
+    // a single log file, or even few of them.
+    uint64_t size{};
+  };
+
+  BatchSizeCalculator batch_size_calculator;
+  batch.Iterate(&batch_size_calculator);
+  // And we could tweak the size further here by adding some 'extra overhead',
+  // e.g. 5-10%
+  return batch_size_calculator.size;
 }
 
 }  // anonymous namespace
@@ -329,6 +376,16 @@ bool DiskCache::Put(const std::string& key, leveldb::Slice slice) {
     return false;
   }
 
+  const auto available_bytes = GetAvailableSpaceBytes(disk_cache_path_);
+  const auto put_size = key.size() + slice.size();
+  if (put_size >= available_bytes) {
+    OLP_SDK_LOG_ERROR_F(
+        kLogTag,
+        "Put: failed, no space left, put_size=%zu, available_bytes=%zu",
+        put_size, available_bytes);
+    return false;
+  }
+
   leveldb::WriteOptions write_options;
   write_options.sync = enforce_immediate_flush_;
 
@@ -441,6 +498,16 @@ DiskCache::OperationOutcome<> DiskCache::ApplyBatch(
         OLP_SDK_LOG_INFO(kLogTag, "Compacting database finished");
       });
     }
+  }
+
+  const auto available_bytes = GetAvailableSpaceBytes(disk_cache_path_);
+  const auto batch_size = GetWriteBatchSize(*batch);
+  if (batch_size >= available_bytes) {
+    OLP_SDK_LOG_ERROR_F(kLogTag,
+                        "ApplyBatch: failed, no space left, batch_size=%zu, "
+                        "available_bytes=%zu",
+                        batch_size, available_bytes);
+    return client::ApiError(client::ErrorCode::CacheIO, "No space left");
   }
 
   leveldb::WriteOptions write_options;
