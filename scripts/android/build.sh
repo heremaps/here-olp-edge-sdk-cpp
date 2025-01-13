@@ -42,6 +42,7 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/21.3.6528147/build/cmake/andr
   -DANDROID_ABI=arm64-v8a \
   -DANDROID_NDK="$ANDROID_HOME/ndk/21.3.6528147" \
   -DOLP_SDK_ENABLE_TESTING=NO \
+  -DOLP_SDK_ENABLE_ANDROID_CURL=ON \
   -DOLP_SDK_BUILD_EXAMPLES=ON
 
 #cmake --build . # this is alternative option for build
